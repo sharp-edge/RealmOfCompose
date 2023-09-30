@@ -1,0 +1,12 @@
+Functional:
+
+1. After adding the expense, clear all fields.
+2. For some reason the list is not showing from local DB check that.
+3. After updating, the new value is not reflecting in the list.
+
+
+
+UI:
+
+1. Leave some space between TextFields.
+2.
