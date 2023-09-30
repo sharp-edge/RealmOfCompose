@@ -1,16 +1,15 @@
-# RealmOfCompose
+# RealmOfCompose :crown:
 Simple and scalable Android Expense App showcasing best practices with Compose, MVVM, Flow, Realm, and KOIN.
 
 A modern Android Expense App showcasing the prowess of Jetpack Compose combined with MVVM, StateFlow, Realm, and KOIN.
 
-App Screenshot
 Features :star:
 
-    Jetpack Compose: UI built with the latest UI toolkit for Android.
-    MVVM Architecture: Clean and clear separation of concerns with ViewModel.
-    StateFlow: Manage the state and data flow effortlessly.
-    Realm: Efficient and easy data persistence.
-    KOIN: Dependency injection made simple and lightweight.
+* **Jetpack Compose:** UI built with the latest UI toolkit for Android.
+* **MVVM Architecture:** Clean and clear separation of concerns with ViewModel.
+* **StateFlow:** Manage the state and data flow effortlessly.
+* **Realm:** Efficient and easy data persistence.
+* **KOIN:** Dependency injection made simple and lightweight.
 
 Contributing :handshake:
 
