@@ -49,17 +49,25 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.platform.LocalContext
+import com.sharpedge.compose_realm_crud.app.ui.viewmodel.ErrorType
 import java.time.LocalDate
 import java.util.Calendar
 
@@ -73,7 +81,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             AndroidCRUDJetpackComposeRealmTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
@@ -88,6 +95,7 @@ class MainActivity : ComponentActivity() {
 
                             )
                         MainContent()
+
                     }
                 }
             }
@@ -99,40 +107,70 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun MainContent() {
+        Box(modifier =  Modifier.fillMaxSize()) {
+            val viewState by viewModel.state.collectAsState()
+            val snackbarHostState = remember { SnackbarHostState() }
 
-        val viewState by viewModel.state.collectAsState()
+            LaunchedEffect(viewState.error) {
+                viewState.error?.let { errorType ->
+                    if (errorType is ErrorType.TextFieldError) {
+                        val errorMessage = errorType.message
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(2.dp)
-        ) {
-            // Your UI Components for adding or updating expenses
-            ExpenseInputFields(
-                expense = viewState.selectedExpense,
-                onUpdate = { updatedExpense ->
-                    viewModel.updateExpense(updatedExpense)
+                        val result = snackbarHostState.showSnackbar(
+                            message = errorMessage,
+                            actionLabel = "Dismiss",
+                            duration = SnackbarDuration.Short
+                        )
 
-                },
-                onAdd = { newExpense ->
-                    viewModel.addExpense(newExpense)
-                },
-                onClear = {
-                    viewModel.clearSelectedExpense()
+                        when (result) {
+                            SnackbarResult.ActionPerformed, SnackbarResult.Dismissed -> viewModel.clearError()
+                        }
+                    }
                 }
+            }
+
+
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter)
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
 
-            ExpensesList(
-                expenses = viewState.expenses,
-                isLoading = viewState.isLoading,
-                error = viewState.error,
-                onExpenseClick = { clickedExpense ->
-                    viewModel.selectExpense(clickedExpense)
-                }
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(2.dp)
+            ) {
+
+                ExpenseInputFields(
+                    expense = viewState.selectedExpense,
+                    onUpdate = { updatedExpense ->
+                        viewModel.updateExpense(updatedExpense)
+
+                    },
+                    onAdd = { expenseName, expenseAmount, date ->
+                        viewModel.addExpense(expenseName, expenseAmount, date)
+                    },
+                    onClear = {
+                        viewModel.clearSelectedExpense()
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                ExpensesList(
+                    expenses = viewState.expenses,
+                    isLoading = viewState.isLoading,
+                    error = viewState.error,
+                    onExpenseClick = { clickedExpense ->
+                        viewModel.selectExpense(clickedExpense)
+                    }
+                )
+            }
+
+
         }
+
     }
 
 
@@ -140,13 +178,24 @@ class MainActivity : ComponentActivity() {
     fun ExpenseInputFields(
         expense: Expense?,
         onUpdate: (Expense) -> Unit,
-        onAdd: (Expense) -> Unit,
+        onAdd: (String, String, String) -> Unit,
         onClear: () -> Unit
     ) {
 
         var expenseName by remember(expense) { mutableStateOf(expense?.expenseName ?: "") }
         var amount by remember(expense) { mutableStateOf(expense?.amount?.toString() ?: "") }
         var date by remember(expense) { mutableStateOf(expense?.date ?: "") }
+
+
+
+        val clearEvent by viewModel.clearEvent.collectAsState()
+        if (clearEvent) {
+            expenseName = ""
+            amount = ""
+            date = ""
+            viewModel.resetClearInputFieldsFlag()
+        }
+
 
         Row(
             modifier = Modifier
@@ -227,7 +276,6 @@ class MainActivity : ComponentActivity() {
                 )},
             contentAlignment = Alignment.Center
         ) {
-            //date = dateNow.value.toString()
             OutlinedTextField(
                 value = date,
                 onValueChange = { },
@@ -254,10 +302,6 @@ class MainActivity : ComponentActivity() {
                         disabledElevation = 0.dp
                     ),
                     onClick = {
-                        // Clear the fields
-                        expenseName = ""
-                        amount = ""
-                        date = ""
                         onClear()  // Clear the state in ViewModel
                     }) {
                     Text("Clear")
@@ -297,22 +341,15 @@ class MainActivity : ComponentActivity() {
                         disabledElevation = 0.dp
                     ),
                     onClick = {
-                        val newExpense =
-                            Expense(
-                                expenseName = expenseName,
-                                amount = amount.toDouble(),
-                                date = date
-                            )
-                        onAdd(newExpense)  // Call the provided lambda with the new expense data
-                        expenseName = ""
-                        amount = ""
-                        date = ""
+                        onAdd(expenseName, amount, date)  // Call the provided lambda with the new expense data
+
                     }) {
                     Text("Add")
                 }
             }
 
         }
+
     }
 
 
@@ -339,7 +376,7 @@ class MainActivity : ComponentActivity() {
     fun ExpensesList(
         expenses: List<Expense>,
         isLoading: Boolean,
-        error: String?,
+        error: ErrorType?,
         onExpenseClick: (Expense) -> Unit
     ) {
         var showDeleteDialog by remember { mutableStateOf(false) }
@@ -350,9 +387,9 @@ class MainActivity : ComponentActivity() {
             if (isLoading) {
                 // Loading state
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
-            } else if (error != null) {
+            } else if (error != null && error is ErrorType.LazyListError) {
                 // Error state
-                Text(text = error, Modifier.align(Alignment.Center))
+                Text(text = error.message, Modifier.align(Alignment.Center))
             } else {
                 if (expenses.isEmpty()) {
                     Text(text = "No Expenses", Modifier.align(Alignment.Center))

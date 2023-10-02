@@ -22,7 +22,7 @@ class MainViewModel(
         val expenses: List<Expense> = emptyList(),
         val selectedExpense: Expense? = null,
         val isLoading: Boolean = false,
-        val error: String? = null
+        val error: ErrorType = ErrorType.None
     )
 
     private val _state = MutableStateFlow(ViewState())
@@ -32,6 +32,23 @@ class MainViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, _state.value)
     val state: StateFlow<ViewState> = debugState
 
+
+    private val _clearEvent = MutableStateFlow(false)
+    val clearEvent: StateFlow<Boolean> = _clearEvent
+
+
+
+
+    private fun triggerInputError(errorMessage: String) {
+        Log.e("triggerError", "is called")
+        // Assuming other properties remain the same, just changing the error here
+        _state.value = _state.value.copy(error = ErrorType.TextFieldError(errorMessage))
+
+    }
+
+    fun clearError() {
+        _state.value = _state.value.copy(error = ErrorType.None)
+    }
 
 
     fun initialize() {
@@ -54,7 +71,9 @@ class MainViewModel(
                     _state.value = _state.value.copy(expenses = expenses, isLoading = false)
                 }
             } catch (e: Exception) {
-                _state.value = _state.value.copy(error = "Failed to load data.", isLoading = false)
+                _state.value = _state.value.copy(error = ErrorType.LazyListError("Failed to load data."), isLoading = false)
+
+                //_state.value = _state.value.copy(error = "Failed to load data.", isLoading = false)
             }
         }
 
@@ -62,12 +81,63 @@ class MainViewModel(
     }
 
 
-    fun addExpense(expense: Expense) {
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.insertExpense(expense)
-            loadExpenses()  // Refresh the list after adding
-            clearSelectedExpense() // Make sure the input fields are cleared
+//    fun addExpense(expense: Expense) {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            repository.insertExpense(expense)
+//            loadExpenses()  // Refresh the list after adding
+//            clearSelectedExpense() // Make sure the input fields are cleared
+//        }
+//    }
+
+    private fun clearInputFields() {
+        _clearEvent.value = true
+    }
+
+    fun resetClearInputFieldsFlag() {
+        _clearEvent.value = false
+    }
+
+    fun addExpense(expenseName: String, expenseAmount: String, date: String) {
+        Log.e("addExpense","is called")
+        if(isExpenseDataValid(expenseName, expenseAmount, date)) { // check the validity of input first
+            val expense = Expense().apply {
+                this.expenseName = expenseName
+                this.amount = expenseAmount.toDouble()
+                this.date = date
+
+            }
+            // now we can clear input fields
+            clearInputFields()
+            viewModelScope.launch(Dispatchers.IO) {
+                repository.insertExpense(expense)
+                loadExpenses()  // Refresh the list after adding
+                clearSelectedExpense() // Make sure the input fields are cleared
+            }
         }
+
+    }
+
+    private fun isExpenseDataValid(expenseName: String, expenseAmount: String, date: String): Boolean {
+        Log.e("isExpenseDataValid","is called")
+        var isValid = true
+        if(expenseName.isEmpty()) {
+            isValid = false
+            triggerInputError("Please enter expense name")
+        } else if(expenseName.length <= 1) {
+            isValid = false
+            triggerInputError("Please enter a valid expense name")
+        } else if(expenseAmount.isEmpty()) {
+            isValid = false
+            triggerInputError("Please enter amount")
+        } else if(expenseAmount.toDouble() <= 0) { // don't want 0 expense or negative value
+            isValid = false
+            triggerInputError("Please enter a valid amount")
+        } else if(date.isEmpty()) {
+            isValid = false
+            triggerInputError("Please enter date")
+        }
+
+        return isValid
     }
 
 
