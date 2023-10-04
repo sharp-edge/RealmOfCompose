@@ -144,8 +144,8 @@ class MainActivity : ComponentActivity() {
 
                 ExpenseInputFields(
                     expense = viewState.selectedExpense,
-                    onUpdate = { updatedExpense ->
-                        viewModel.updateExpense(updatedExpense)
+                    onUpdate = { expenseName, expenseAmount, date ->
+                        viewModel.updateExpense(expenseName, expenseAmount, date)
 
                     },
                     onAdd = { expenseName, expenseAmount, date ->
@@ -177,7 +177,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun ExpenseInputFields(
         expense: Expense?,
-        onUpdate: (Expense) -> Unit,
+        onUpdate: (String, String, String) -> Unit,
         onAdd: (String, String, String) -> Unit,
         onClear: () -> Unit
     ) {
@@ -318,14 +318,7 @@ class MainActivity : ComponentActivity() {
                         disabledElevation = 0.dp
                     ),
                     onClick = {
-                        onUpdate(expense.apply {
-                            this.expenseName = expenseName
-                            // had no choice but to add a check here, because of String to Double issue.
-                            this.amount =
-                                if (!amount.isEmpty()) amount.toDouble() else expense.amount
-                            this.date = date
-                        })
-                        // Call the provided lambda with the updated expense data
+                        onUpdate(expenseName, amount, date)
                     }) {
                     Text("Update")
                 }

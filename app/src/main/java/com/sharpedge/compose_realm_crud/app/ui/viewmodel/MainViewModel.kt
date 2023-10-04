@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sharpedge.compose_realm_crud.app.data.model.Expense
 import com.sharpedge.compose_realm_crud.app.data.repository.ExpenseRepository
+import com.sharpedge.compose_realm_crud.app.utils.isNullOrBlankOrEmpty
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,8 +36,6 @@ class MainViewModel(
 
     private val _clearEvent = MutableStateFlow(false)
     val clearEvent: StateFlow<Boolean> = _clearEvent
-
-
 
 
     private fun triggerInputError(errorMessage: String) {
@@ -71,23 +70,15 @@ class MainViewModel(
                     _state.value = _state.value.copy(expenses = expenses, isLoading = false)
                 }
             } catch (e: Exception) {
-                _state.value = _state.value.copy(error = ErrorType.LazyListError("Failed to load data."), isLoading = false)
-
-                //_state.value = _state.value.copy(error = "Failed to load data.", isLoading = false)
+                _state.value = _state.value.copy(
+                    error = ErrorType.LazyListError("Failed to load data."),
+                    isLoading = false
+                )
             }
         }
 
 
     }
-
-
-//    fun addExpense(expense: Expense) {
-//        viewModelScope.launch(Dispatchers.IO) {
-//            repository.insertExpense(expense)
-//            loadExpenses()  // Refresh the list after adding
-//            clearSelectedExpense() // Make sure the input fields are cleared
-//        }
-//    }
 
     private fun clearInputFields() {
         _clearEvent.value = true
@@ -98,8 +89,13 @@ class MainViewModel(
     }
 
     fun addExpense(expenseName: String, expenseAmount: String, date: String) {
-        Log.e("addExpense","is called")
-        if(isExpenseDataValid(expenseName, expenseAmount, date)) { // check the validity of input first
+        Log.e("addExpense", "is called")
+        if (isExpenseDataValid(
+                expenseName,
+                expenseAmount,
+                date
+            )
+        ) { // check the validity of input first
             val expense = Expense().apply {
                 this.expenseName = expenseName
                 this.amount = expenseAmount.toDouble()
@@ -117,22 +113,26 @@ class MainViewModel(
 
     }
 
-    private fun isExpenseDataValid(expenseName: String, expenseAmount: String, date: String): Boolean {
-        Log.e("isExpenseDataValid","is called")
+    private fun isExpenseDataValid(
+        expenseName: String,
+        expenseAmount: String,
+        date: String
+    ): Boolean {
+        Log.e("isExpenseDataValid", "is called")
         var isValid = true
-        if(expenseName.isEmpty()) {
+        if (expenseName.isNullOrBlankOrEmpty()) {
             isValid = false
             triggerInputError("Please enter expense name")
-        } else if(expenseName.length <= 1) {
+        } else if (expenseName.length <= 1) {
             isValid = false
             triggerInputError("Please enter a valid expense name")
-        } else if(expenseAmount.isEmpty()) {
+        } else if (expenseAmount.isNullOrBlankOrEmpty()) {
             isValid = false
             triggerInputError("Please enter amount")
-        } else if(expenseAmount.toDouble() <= 0) { // don't want 0 expense or negative value
+        } else if (expenseAmount.toDouble() <= 0) { // don't want 0 expense or negative value
             isValid = false
             triggerInputError("Please enter a valid amount")
-        } else if(date.isEmpty()) {
+        } else if (date.isNullOrBlankOrEmpty()) {
             isValid = false
             triggerInputError("Please enter date")
         }
@@ -141,20 +141,53 @@ class MainViewModel(
     }
 
 
-    fun updateExpense(expense: Expense) {
+    fun updateExpense(
+        expenseName: String ,
+        expenseAmount: String,
+        date: String
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
+
             val selectedExpense = state.value.selectedExpense!!
-            if (expense.expenseName.isEmpty()) {
-                expense.expenseName = selectedExpense.expenseName
-            }
-            if (expense.date.isEmpty()) {
-                expense.date = selectedExpense.date
+            val expenseForUpdate = getExpenseForUpdate(selectedExpense, expenseName, expenseAmount, date)
+
+
+            if (isDataValidForUpdate(expenseName, expenseAmount, date)) {
+                repository.updateExpense(expenseForUpdate) // pass to repo
+                loadExpenses()  // Refresh the list after updating
+                clearSelectedExpense() // Make sure the input fields are cleared
+            } else {
+                triggerInputError("All the fields cannot be empty")
             }
 
-            repository.updateExpense(expense) // pass to repo
-            loadExpenses()  // Refresh the list after updating
-            clearSelectedExpense() // Make sure the input fields are cleared
         }
+    }
+
+    // Creating a separate function for validate, since we can use the previous values of data if anything is empty
+
+
+    private fun getExpenseForUpdate(
+        currentExpense: Expense?,
+        expenseName: String = "",
+        expenseAmount: String = "",
+        date: String = ""
+    ): Expense {
+        return Expense().apply {
+            this.expenseName = if (expenseName.isNullOrBlankOrEmpty()) currentExpense?.expenseName
+                ?: "" else expenseName
+            this.amount = if (expenseAmount.isNullOrBlankOrEmpty()) currentExpense?.amount
+                ?: 0.0 else expenseAmount.toDouble()
+            this.date = if (date.isNullOrBlankOrEmpty()) currentExpense?.date ?: "" else date
+            this.id = currentExpense!!.id
+        }
+    }
+
+    private fun isDataValidForUpdate(
+        expenseName: String = "",
+        expenseAmount: String = "",
+        date: String = ""
+    ): Boolean {
+        return !expenseName.isNullOrBlankOrEmpty() && !expenseAmount.isNullOrBlankOrEmpty() && !date.isNullOrBlankOrEmpty()
     }
 
 
