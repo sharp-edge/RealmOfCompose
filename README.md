@@ -1,7 +1,7 @@
 # RealmOfCompose :crown:
 Simple and scalable Android Expense App showcasing best practices with Compose, MVVM, Flow, Realm, and KOIN.
 
-🚀 Following the KISS (Keep It Stupid Simple) principle, this project avoids over-engineering. Every component is designed with a clear separation of concerns, ensuring each fulfills its own responsibility.
+🚀 Following the KISS (Keep it simple, stupid) principle, this project avoids over-engineering. Every component is designed with a clear separation of concerns, ensuring each fulfills its own responsibility.
 A modern Android Expense App showcasing the prowess of Jetpack Compose combined with MVVM, StateFlow, Realm, and KOIN.
 
 Features :star:
