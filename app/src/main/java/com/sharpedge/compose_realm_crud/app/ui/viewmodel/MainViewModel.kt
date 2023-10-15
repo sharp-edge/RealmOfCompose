@@ -27,24 +27,26 @@ class MainViewModel(
     )
 
     private val _state = MutableStateFlow(ViewState())
-    //val state: StateFlow<ViewState> = _state
+    val state: StateFlow<ViewState> = _state
 
-    val debugState = _state.onEach { Log.d("Sarmad", "State has been updated: $it") }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, _state.value)
-    val state: StateFlow<ViewState> = debugState
+//    val debugState = _state.onEach { Log.d("Sarmad", "State has been updated: $it") }
+//        .stateIn(viewModelScope, SharingStarted.Eagerly, _state.value)
+//    val state: StateFlow<ViewState> = debugState
 
 
     private val _clearEvent = MutableStateFlow(false)
     val clearEvent: StateFlow<Boolean> = _clearEvent
 
 
-    private fun triggerInputError(errorMessage: String) {
-        Log.e("triggerError", "is called")
+    // This function is called only when an input type error needs to be informed to the View.
+    public fun triggerInputError(errorMessage: String) {
+        //Log.e("triggerError", "is called")
         // Assuming other properties remain the same, just changing the error here
         _state.value = _state.value.copy(error = ErrorType.TextFieldError(errorMessage))
 
     }
 
+    // this function is called from the View to clear the error state after the user has been informed of the error
     fun clearError() {
         _state.value = _state.value.copy(error = ErrorType.None)
     }
@@ -61,7 +63,8 @@ class MainViewModel(
         }
     }
 
-    private fun loadExpenses() {
+    // This function gets all the data AKA Expenses from the Repository. Repository further calls the DataSource for the data, Data Source gets the data from local Realm
+    public fun loadExpenses() {
 
         viewModelScope.launch(Dispatchers.IO) {
             _state.value = _state.value.copy(isLoading = true)
@@ -80,16 +83,19 @@ class MainViewModel(
 
     }
 
+    // This function is used to clear input fields from the View, in case the input data is passed through validation and sent to Repository to add/update
     private fun clearInputFields() {
         _clearEvent.value = true
     }
 
+    // This function is called from the View in order to change the state of composable to allow input data after clearing it.
     fun resetClearInputFieldsFlag() {
         _clearEvent.value = false
     }
 
+    // This function gets the input values, and after success validation, passes them to Repository function
     fun addExpense(expenseName: String, expenseAmount: String, date: String) {
-        Log.e("addExpense", "is called")
+        //Log.e("addExpense", "is called")
         if (isExpenseDataValid(
                 expenseName,
                 expenseAmount,
@@ -113,12 +119,13 @@ class MainViewModel(
 
     }
 
-    private fun isExpenseDataValid(
+    // Just as the name states, this function checks the validity of the input data passed for the Add operation in CRUD
+    public fun isExpenseDataValid(
         expenseName: String,
         expenseAmount: String,
         date: String
     ): Boolean {
-        Log.e("isExpenseDataValid", "is called")
+        //Log.e("isExpenseDataValid", "is called")
         var isValid = true
         if (expenseName.isNullOrBlankOrEmpty()) {
             isValid = false
@@ -141,6 +148,7 @@ class MainViewModel(
     }
 
 
+    // This function gets the input values, and after success validation, passes them to Repository function for update operation of CRUD
     fun updateExpense(
         expenseName: String ,
         expenseAmount: String,
@@ -163,10 +171,9 @@ class MainViewModel(
         }
     }
 
-    // Creating a separate function for validate, since we can use the previous values of data if anything is empty
-
-
-    private fun getExpenseForUpdate(
+    // This function creates an Expense Object based on the passed input values, if any value passed is empty, then existing selected Expense object's value is used instead.
+    // Basically this is for update only, when the user click on a list item to update, the list Expense object is stored in ViewState as Selected Expense.
+    public fun getExpenseForUpdate(
         currentExpense: Expense?,
         expenseName: String = "",
         expenseAmount: String = "",
@@ -182,7 +189,8 @@ class MainViewModel(
         }
     }
 
-    private fun isDataValidForUpdate(
+    // Just as the name states, this function checks if all the values are Null/Empty/Blank for the update operation in CRUD
+    public fun isDataValidForUpdate(
         expenseName: String = "",
         expenseAmount: String = "",
         date: String = ""
@@ -191,6 +199,7 @@ class MainViewModel(
     }
 
 
+    // Deletes an expense, when the user long clicks a list item, a confirmation dialog appears in View then if user selects yes, the selected Expense object is passed to Repository to perform delete operation in CRUD
     fun deleteExpense(expense: Expense) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.deleteExpense(expense)
@@ -199,10 +208,12 @@ class MainViewModel(
 
     }
 
+    // When ever user clicks a list item in the View, this function stores the Expense object
     fun selectExpense(expense: Expense) {
         _state.value = _state.value.copy(selectedExpense = expense)
     }
 
+    // This function is called in multiple places, there is a clear button in View which clears the text fields and the Selected Expense object
     fun clearSelectedExpense() {
         _state.value = _state.value.copy(selectedExpense = null)
     }
