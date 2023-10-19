@@ -67,6 +67,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sharpedge.compose_realm_crud.app.ui.viewmodel.ErrorType
 import java.time.LocalDate
 import java.util.Calendar
@@ -108,7 +109,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun MainContent() {
         Box(modifier =  Modifier.fillMaxSize()) {
-            val viewState by viewModel.state.collectAsState()
+            val viewState by viewModel.state.collectAsStateWithLifecycle()
             val snackbarHostState = remember { SnackbarHostState() }
 
             LaunchedEffect(viewState.error) {
@@ -188,7 +189,7 @@ class MainActivity : ComponentActivity() {
 
 
 
-        val clearEvent by viewModel.clearEvent.collectAsState()
+        val clearEvent by viewModel.clearEvent.collectAsStateWithLifecycle()
         if (clearEvent) {
             expenseName = ""
             amount = ""
