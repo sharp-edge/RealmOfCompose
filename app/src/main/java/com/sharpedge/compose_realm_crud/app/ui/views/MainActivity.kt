@@ -45,6 +45,8 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
@@ -67,6 +69,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sharpedge.compose_realm_crud.app.ui.viewmodel.ErrorType
 import java.time.LocalDate
@@ -421,6 +426,7 @@ class MainActivity : ComponentActivity() {
     }
 
 
+
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     fun ExpenseItem(
@@ -428,24 +434,55 @@ class MainActivity : ComponentActivity() {
         onExpenseClick: (Expense) -> Unit,
         onExpenseLongClick: (Expense) -> Unit
     ) {
-        Row(
+        Card(
             modifier = Modifier
-                .combinedClickable(
-                    onClick = { onExpenseClick(expense) },
-                    onLongClick = { onExpenseLongClick(expense) }
-                )
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = "${expense.expenseName}: ${expense.amount}")
-            Icon(
-                imageVector = Icons.Default.ShoppingCart,
-                contentDescription = "Options",
-                tint = MaterialTheme.colorScheme.primary
+                .padding(8.dp),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 4.dp
             )
+        ) {
+            Row(
+                modifier = Modifier
+                    .combinedClickable(
+                        onClick = { onExpenseClick(expense) },
+                        onLongClick = { onExpenseLongClick(expense) }
+                    )
+                    .fillMaxWidth()
+                    .padding(16.dp), // Padding inside the card
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically // Align items vertically in the center
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f) // This will make the text column take up the remaining space
+                ) {
+                    Text(
+                        text = expense.expenseName,
+                        style = TextStyle(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        //color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "£${expense.amount}",
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        //color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Default.ShoppingCart,
+                    contentDescription = "Expense",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
+
 
 
     @Composable
