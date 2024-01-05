@@ -449,12 +449,12 @@ class MainActivity : ComponentActivity() {
                         onLongClick = { onExpenseLongClick(expense) }
                     )
                     .fillMaxWidth()
-                    .padding(16.dp), // Padding inside the card
+                    .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically // Align items vertically in the center
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(
-                    modifier = Modifier.weight(1f) // This will make the text column take up the remaining space
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text(
                         text = expense.expenseName,
