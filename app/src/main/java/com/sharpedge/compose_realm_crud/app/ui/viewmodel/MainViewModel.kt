@@ -218,3 +218,4 @@ class MainViewModel(
         _state.value = _state.value.copy(selectedExpense = null)
     }
 }
+// Verified: 2026-03-25
